@@ -1,0 +1,51 @@
+# --- Core AI & LLM Providers ---
+# For Google's Gemini models
+google-generativeai==0.7.1
+# For OpenAI models
+openai==1.35.10
+
+
+# --- Vector Database & Embeddings ---
+# The official client for the Pinecone cloud vector database (v4+)
+# This client is used to interact with Pinecone's API, including the integrated embedding models.
+pinecone==4.1.2
+
+
+# --- Document Processing & OCR ---
+# Preferred library for PDF text extraction (provides the 'fitz' module)
+PyMuPDF==1.24.8
+# Fallback PDF library
+PyPDF2==3.0.1
+# For .docx (Word) files
+python-docx==1.1.2
+# For .pptx (PowerPoint) files
+python-pptx==0.6.23
+# OCR engine wrapper
+pytesseract==0.3.10
+# Converts PDF pages to images for OCR
+pdf2image==1.17.0
+
+
+# --- Web Framework & API Server ---
+# The main web framework
+fastapi==0.111.1
+# ASGI server to run FastAPI
+uvicorn[standard]==0.30.1
+# Required by FastAPI for file uploads
+python-multipart==0.0.9
+# HTTP client for downloading files from URLs
+httpx==0.27.0
+
+
+# --- Data Processing & Validation ---
+# Core data model validation used by FastAPI
+pydantic==2.8.2
+# Fundamental package for numerical operations
+numpy==1.26.4
+
+
+# --- Utilities ---
+# For natural language processing (sentence tokenization)
+nltk==3.8.1
+# For loading environment variables from a .env file
+python-dotenv==1.0.1
