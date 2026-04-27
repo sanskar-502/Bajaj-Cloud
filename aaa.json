@@ -1,0 +1,69 @@
+{
+  "answer": "An embedded system is an Electronic/Electro mechanical system which is designed to perform a specific function and is a combination of both hardware and firmware (Software). It is a system which is a combination of special purpose hardware and embedded OS for executing a specific set of applications. An embedded system may or may not contain an operating system, and its firmware is pre-programmed and non-alterable by the end-user.",
+  "clauses_used": [
+    {
+      "title": "Untitled Section",
+      "text": "Electronic Toys, Mobile Handsets, Washing Machines, Air Conditioners, Automotive Control Units, Set Top Box, DVD Player etc... Embedded Systems are — Unique in character and behavior — With specialized hardware and software Embedded Systems Vs General Computing Systems General Purpose Computing System Embedded System A system which is a combination of generic hardware and General-Purpose Operating A system which is a combination of special purpose hardware and embedded OS for System for executing a variety of | executing a specific set of applications applications Contain a General-Purpose Operating | May or may not contain an operating system System (GPOS) for functioning Applications are alterable (programmable) by user (It is possible for the end user to re install the Operating System, and add or remove user applications) The firmware of the embedded system is pre- programmed and it is non-alterable by end- user Performance is the key deciding factor on the selection of the system.",
+      "document_id": "095cbd64-264e-435e-8f18-8043dbf70c5e.pdf",
+      "relevance_score": 0.5462701320648193,
+      "page": null,
+      "clause_id": "2.0"
+    },
+    {
+      "title": "Untitled Section",
+      "text": "Shibu K V, “Introduction to Embedded Systems”, Tata McGraw Hill Education, Private Limited, 2nd Edition. Introduction to Embedded Systems What is Embedded System? MODULE 1 An Electronic/Electro mechanical system which is designed to perform a specific function and is a combination of both hardware and firmware (Software) E.g.",
+      "document_id": "095cbd64-264e-435e-8f18-8043dbf70c5e.pdf",
+      "relevance_score": 0.5297271609306335,
+      "page": null,
+      "clause_id": "1.0"
+    },
+    {
+      "title": "Untitled Section",
+      "text": "Define embedded system. Describe classification of embedded system Explain Purpose of embedded system. Mention major application area of embedded system.",
+      "document_id": "095cbd64-264e-435e-8f18-8043dbf70c5e.pdf",
+      "relevance_score": 0.5237041115760803,
+      "page": null,
+      "clause_id": "208.0"
+    },
+    {
+      "title": "Untitled Section",
+      "text": "Introduction to Embedded Systems MODULE 1 Microprocessor A silicon chip representing a Central Processing Unit (CPU), which is capable of performing arithmetic as well as logical operations according to a pre-defined set of Instructions, which is specific to the manufacturer In general, the CPU contains the Arithmetic and Logic Unit (ALU), Control Unit and Working registers Microprocessor is a dependant unit and it requires the combination of other hardware like Memory, Timer Unit, and Interrupt Controller etc for proper functioning.",
+      "document_id": "095cbd64-264e-435e-8f18-8043dbf70c5e.pdf",
+      "relevance_score": 0.5147181153297424,
+      "page": null,
+      "clause_id": "27.0"
+    },
+    {
+      "title": "Untitled Section",
+      "text": "Example are, Smart phone devices, MIDs ete. 2. Embedded Systems - Classification based on Complexity & Performance Small Scale: The embedded systems built around low performance and low cost 8- or 16-bit microprocessors/ microcontrollers. It is suitable for simple applications and where performance is not time critical. It may or may not contain OS. Medium Scale: Embedded Systems built around medium performance, low cost 16- or 32-bit microprocessors / microcontrollers or DSPs.",
+      "document_id": "095cbd64-264e-435e-8f18-8043dbf70c5e.pdf",
+      "relevance_score": 0.4904041886329651,
+      "page": null,
+      "clause_id": "9.0"
+    }
+  ],
+  "logic_tree": {
+    "type": "AND",
+    "conditions": [
+      {
+        "condition": "An embedded system is an Electronic/Electro mechanical system designed to perform a specific function and is a combination of both hardware and firmware (Software).",
+        "is_met": true,
+        "source_clause_id": "1.0"
+      },
+      {
+        "condition": "Embedded systems are unique in character and behavior, with specialized hardware and software, designed for executing a specific set of applications, and their firmware is pre-programmed and non-alterable by the end-user.",
+        "is_met": true,
+        "source_clause_id": "2.0"
+      },
+      {
+        "condition": "Examples of embedded systems include Electronic Toys, Mobile Handsets, Washing Machines, Air Conditions, Automotive Control Units, Set Top Box, DVD Player, Smart phone devices, MIDs, and they can be classified based on complexity and performance (e.g., Small Scale, Medium Scale).",
+        "is_met": true,
+        "source_clause_id": "2.0, 9.0"
+      }
+    ],
+    "result": null
+  },
+  "confidence": 1,
+  "query_intent": "General Inquiry",
+  "entities": {}
+}

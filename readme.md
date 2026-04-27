@@ -1,143 +1,436 @@
-# 🧠 LLM-powered Intelligent Query–Retrieval System (Cloud-Native)
+# PolicyMind
 
-[](https://www.python.org/downloads/)
-[](https://opensource.org/licenses/MIT)
-[](https://fastapi.tiangolo.com/)
+PolicyMind is a cloud-first Retrieval-Augmented Generation (RAG) API for document intelligence.  
+It ingests policy and compliance documents, extracts and chunks text, indexes semantic records in Pinecone with integrated embeddings, and returns grounded, evidence-aware answers.
 
-An intelligent document analyst assistant designed to process and understand complex legal, insurance, HR, and compliance documents. The system answers user questions based on deep semantic understanding, clause relevance, and AI-generated logical reasoning.
+This repository is structured for production readability with clear separation of API, configuration, service logic, schemas, and dependency wiring.
 
-This version is architected to use a **cloud-based embedding model**, offloading heavy computation for increased speed and accuracy.
+---
 
------
+## 1) What PolicyMind Does
 
-## 🎯 System Overview
+PolicyMind supports:
 
-This system provides a complete Retrieval- Augmented Generation (RAG) pipeline:
+- Multi-format document ingestion: PDF, DOCX, TXT, PPTX
+- OCR fallback for scanned PDFs (Tesseract + Poppler)
+- Semantic indexing using Pinecone integrated embedding models
+- Question answering over indexed content
+- Optional reasoning tree in responses (`logic_tree`)
+- Temporary isolated processing flow for hackathon submission endpoint
 
-  - **Cloud-Native Embeddings**: Uses high-performance, hosted embedding models (e.g., `llama-text-embed-v2`) via Pinecone for state-of-the-art accuracy and speed.
-  - **Multi-LLM Support**: Integrates with both **Google Gemini** and **OpenAI** models for the final answer generation.
-  - **Advanced RAG**: Goes beyond simple Q\&A to provide answers with supporting evidence and a traceable reasoning process.
-  - **Developer-Friendly API**: Built with **FastAPI**, offering a clean, modern REST API with automatic interactive documentation.
+Typical use cases:
 
------
+- Insurance policy query answering
+- Legal/compliance clause discovery
+- HR policy verification
+- Internal knowledge retrieval from large unstructured documents
 
-## ✨ Features
+---
 
-  - **Robust Document Processing**: Supports **PDF, DOCX, TXT, and PPTX** formats.
-  - **Advanced Text Extraction**: Includes **Optical Character Recognition (OCR)** to extract text even from scanned, image-based PDFs.
-  - **Intelligent Chunking**: Splits documents into meaningful, overlapping chunks to preserve context.
-  - **AI-Generated Reasoning**: Provides a `logic_tree` in responses to show how the AI arrived at an answer.
-  - **Full API Control**: Manage the entire document lifecycle (upload, query, list, delete) through REST API endpoints.
+## 2) Core Features
 
------
+- **Cloud-native vector workflow**  
+  Uses Pinecone integrated embedding model (`PINECONE_EMBEDDING_MODEL`) so embedding generation is handled by Pinecone.
 
-## 🛠️ Technology Stack
+- **Provider-flexible answer generation**  
+  Supports Gemini and OpenAI for final answer synthesis.
 
-  - **Backend Framework**: FastAPI
-  - **LLM Providers**: Google Gemini, OpenAI
-  - **Vector Database**: Pinecone
-  - **Cloud Embedding Models**: Pinecone Integrated Models (e.g., `llama-text-embed-v2`)
-  - **Document Parsing**: PyMuPDF, python-docx, python-pptx
-  - **OCR Engine**: Tesseract & Poppler
-  - **Data Validation**: Pydantic
+- **Document lifecycle API**  
+  Upload, process, query, and temporary isolated processing for external evaluation flows.
 
------
+- **Structured responses**  
+  Returns relevant clauses, confidence score, and optional logic-tree object.
 
-## 🚀 Getting Started
+- **Production-friendly code organization**  
+  Clean package layout under `src/policymind` with app factory and dependency container.
 
-This guide provides a complete roadmap for setting up and running the project.
+---
 
-### Step 1: System-Level Dependencies
+## 3) Project Structure
 
-Before setting up the Python environment, you must install the programs that the OCR features depend on.
+```text
+PolicyMind/
+├── src/
+│   └── policymind/
+│       ├── app.py                     # FastAPI app factory + startup hooks
+│       ├── main.py                    # Runtime launcher logic
+│       ├── api/
+│       │   └── routes.py              # Route handlers
+│       ├── core/
+│       │   ├── config.py              # Settings and env validation
+│       │   └── logging.py             # Logging setup
+│       ├── dependencies/
+│       │   └── container.py           # Dependency container wiring
+│       ├── models/
+│       │   └── schemas.py             # Pydantic request/response models
+│       └── services/
+│           ├── document_processor.py  # Parsing, OCR, chunking
+│           ├── llm_providers.py       # Gemini/OpenAI adapters
+│           ├── query_engine.py        # RAG query orchestration
+│           └── vector_store.py        # Pinecone data operations
+├── tests/
+│   └── test_smoke.py                  # Basic import/smoke scaffold
+├── requirements.txt
+├── .env.example
+├── .gitignore
+└── main.py                            # Root compatibility launcher
+```
 
-  * **Tesseract-OCR** (for reading text from images)
+---
 
-      * **Windows:** Download and run the installer from **[Tesseract at UB Mannheim](https://github.com/UB-Mannheim/tesseract/wiki)**. **Important:** During installation, make sure to check the box to "Add Tesseract to your system PATH."
-      * **macOS:** `brew install tesseract`
-      * **Linux (Ubuntu/Debian):** `sudo apt-get update && sudo apt-get install tesseract-ocr`
+## 4) End-to-End Processing Flow
 
-  * **Poppler** (for converting PDF pages into images for OCR)
+### Upload and Index Flow (`POST /upload`)
 
-      * **Windows:** Download the latest binary from [this link](https://github.com/oschwartz10612/poppler-windows/releases/), unzip it to a permanent location (e.g., `C:\poppler`), and add its `bin` folder to your system PATH.
-      * **macOS:** `brew install poppler`
-      * **Linux (Ubuntu/Debian):** `sudo apt-get install poppler-utils`
+1. Validate extension and file size.
+2. Save uploaded file to `UPLOAD_DIR`.
+3. Background task starts processing:
+   - Extract text from document.
+   - If PDF text extraction is weak, fallback to OCR.
+   - Clean text and split into semantic chunks.
+   - Build records with metadata (`document_id`, `chunk_id`, `document_type`).
+4. Upsert records into Pinecone namespace.
+5. Cleanup temporary file.
 
-### Step 2: Python Environment Setup
+### Query Flow (`POST /query`)
 
-1.  **Clone the repository:**
+1. Validate question length.
+2. Search Pinecone with raw query text.
+3. Filter by similarity threshold.
+4. Build clause objects from top hits.
+5. Generate final answer with LLM using clause context.
+6. Parse confidence from model output.
+7. Optionally request structured `logic_tree`.
 
-    ```bash
-    git clone <repository-url>
-    cd intelligent-query-retrieval-system-cloud
-    ```
+### Hackathon Flow (`POST /hackrx/run`)
 
-2.  **Create and activate a virtual environment:**
+1. Validate bearer token (`HACKRX_TOKEN`).
+2. Download document from URL.
+3. Process + index document temporarily.
+4. Answer all provided questions with `document_ids=[temp_doc_id]`.
+5. Delete temporary vectors and local file.
 
-    ```bash
-    # Create the virtual environment
-    python -m venv venv
-    # Activate it (Windows)
-    .\venv\Scripts\Activate.ps1
-    # Activate it (macOS/Linux)
-    # source venv/bin/activate
-    ```
+---
 
-3.  **Install Python dependencies:**
+## 5) Technology Stack
 
-    ```bash
-    pip install -r requirements.txt
-    ```
+- **Web/API**: FastAPI, Uvicorn
+- **Vector DB**: Pinecone (`pinecone`)
+- **LLM providers**: Google Gemini (`google-generativeai`), OpenAI (`openai`)
+- **Document extraction**: PyMuPDF, PyPDF2, python-docx, python-pptx
+- **OCR**: pytesseract + pdf2image
+- **Validation**: Pydantic
+- **Utilities**: nltk, python-dotenv, httpx, numpy
 
-4.  **Set up environment variables:**
-    Copy the example file to create your own local configuration.
+---
 
-    ```bash
-    cp env_example.txt .env
-    ```
+## 6) Prerequisites
 
-    Now, **edit the `.env` file** with your secret API keys.
+### System prerequisites
 
-### Step 3: Run the Application
+- Python 3.10+ (recommended: 3.11/3.12)
+- Tesseract OCR installed and available in PATH
+- Poppler installed and available in PATH
 
-You are now ready to start the server.
+Windows:
+
+1. Install Tesseract (UB Mannheim build recommended).
+2. Install Poppler binaries and add `bin` to PATH.
+3. Restart terminal after PATH changes.
+
+macOS:
+
+```bash
+brew install tesseract poppler
+```
+
+Ubuntu/Debian:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y tesseract-ocr poppler-utils
+```
+
+---
+
+## 7) Local Setup (Step-by-Step)
+
+### Step 1: Enter project
+
+```bash
+cd PolicyMind
+```
+
+### Step 2: Create virtual environment
+
+```bash
+python -m venv venv
+```
+
+### Step 3: Activate environment
+
+Windows PowerShell:
+
+```bash
+.\venv\Scripts\Activate.ps1
+```
+
+macOS/Linux:
+
+```bash
+source venv/bin/activate
+```
+
+### Step 4: Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### Step 5: Configure environment
+
+```bash
+cp .env.example .env
+```
+
+Then edit `.env` with your real keys and settings.
+
+### Step 6: Start server
 
 ```bash
 python main.py
 ```
 
-The API will start at `http://127.0.0.1:8000`. You can access the interactive documentation at `http://127.0.0.1:8000/docs`.
+Server:
 
------
+- API: `http://127.0.0.1:8000`
+- Docs (Swagger): `http://127.0.0.1:8000/docs`
 
-## ⚙️ Configuration (`.env`)
+---
 
-Your `.env` file is the central place for configuration.
+## 8) Environment Variables
 
-| Variable | Description | Example Values |
-| :--- | :--- | :--- |
-| **`LLM_PROVIDER`** | The main switch for your Language Model. | `gemini` or `openai` |
-| **`GEMINI_API_KEY`** | Your secret API key for Google's Gemini. | `AIzaSy...` |
-| **`PINECONE_API_KEY`** | Your secret API key for Pinecone. | `pcsk_...` |
-| **`PINECONE_INDEX_NAME`**| The name of your index in Pinecone. | `cloud-model-index` |
-| **`PINECONE_EMBEDDING_MODEL`**| The cloud-hosted model to use. | `llama-text-embed-v2` |
-| **`SIMILARITY_THRESHOLD`** | The minimum score for a chunk to be relevant. | `0.5` (Balanced), `0.6` (Stricter) |
+Use `.env.example` as base.
 
------
+### LLM settings
 
-## 🔌 API Endpoints
+- `LLM_PROVIDER`: `gemini` or `openai`
+- `GEMINI_API_KEY`
+- `GEMINI_MODEL` (default: `gemini-1.5-flash`)
+- `OPENAI_API_KEY`
+- `OPENAI_MODEL` (default: `gpt-4o-mini`)
 
-Visit `http://127.0.0.1:8000/docs` for a full interactive API specification.
+### Vector settings
 
-  - `POST /upload`: Upload a document for processing.
-  - `POST /query`: Ask a question about the processed documents.
-  - `POST /hackrx/run`: Special endpoint for the hackathon submission.
+- `VECTOR_DB_TYPE` (default: `pinecone`)
+- `PINECONE_API_KEY`
+- `PINECONE_INDEX_NAME`
+- `PINECONE_EMBEDDING_MODEL` (default: `llama-text-embed-v2`)
+- `EMBEDDING_MODEL` (kept for compatibility/fallback references)
 
------
+### Retrieval/chunking
 
-## 🚨 Troubleshooting
+- `CHUNK_SIZE` (default: `1000`)
+- `CHUNK_OVERLAP` (default: `200`)
+- `TOP_K_RESULTS` (default: `5`)
+- `SIMILARITY_THRESHOLD` (default: `0.5`)
+- `MAX_FILE_SIZE` in MB (default: `50`)
 
-  - **Configuration Error on Startup**: Check your `.env` file. Ensure the required keys for your selected `LLM_PROVIDER` and `PINECONE_EMBEDDING_MODEL` are present and correct.
-  - **`ModuleNotFoundError`**: Make sure your virtual environment is activated and you have run `pip install -r requirements.txt`.
-  - **OCR Errors (`tesseract` or `poppler` not found)**: This means a system-level dependency is missing or not in your PATH. Close your terminals, reinstall the program, and ensure you add it to your system's PATH.
-  - **Check `app.log`**: For any other issues, the `app.log` file will contain detailed error messages.
+### Server/runtime
+
+- `API_HOST` (default: `0.0.0.0`)
+- `API_PORT` (default: `8000`)
+- `UPLOAD_DIR` (default: `uploads`)
+- `VECTOR_STORE_DIR` (legacy compatibility)
+- `LOG_LEVEL` (default: `INFO`)
+- `HACKRX_TOKEN` (auth token for `/hackrx/run`)
+
+---
+
+## 9) API Reference
+
+### `GET /`
+
+Basic health/info response.
+
+### `POST /upload`
+
+Uploads one document for background processing.
+
+Request: multipart/form-data
+
+- `file`: document file
+
+Response:
+
+- `success`
+- `document_id`
+- `message`
+
+### `POST /query`
+
+Ask a question over indexed docs.
+
+Request JSON example:
+
+```json
+{
+  "question": "What is the waiting period for pre-existing diseases?",
+  "document_ids": ["<doc-id-1>", "<doc-id-2>"],
+  "include_logic": true,
+  "max_results": 5
+}
+```
+
+Response includes:
+
+- `answer`
+- `clauses_used[]`
+- `logic_tree` (optional)
+- `confidence`
+- `query_intent`
+- `entities`
+
+### `POST /hackrx/run`
+
+Runs isolated processing over an external document URL and returns answers for all questions.
+
+Headers:
+
+- `Authorization: Bearer <HACKRX_TOKEN>`
+
+Request JSON example:
+
+```json
+{
+  "documents": "https://example.com/policy.pdf",
+  "questions": [
+    "What is the room rent limit?",
+    "Is maternity covered and after what waiting period?"
+  ]
+}
+```
+
+Response:
+
+```json
+{
+  "answers": ["...", "..."]
+}
+```
+
+---
+
+## 10) Startup and Runtime Notes
+
+- App uses startup event to build dependency container.
+- Services are constructed once and reused.
+- Upload processing is offloaded to FastAPI background tasks.
+- Logs are written to `app.log` and stdout.
+- Temporary files are cleaned after processing.
+- Hackathon flow removes temporary vectors after answer generation.
+
+---
+
+## 11) Development and Testing
+
+### Smoke test scaffold
+
+```bash
+pytest -q
+```
+
+Current test includes basic app import/creation sanity check with mocked container setup.
+
+### Useful checks
+
+```bash
+python -m compileall src/policymind
+```
+
+---
+
+## 12) Troubleshooting
+
+- **Missing dependency errors (`docx`, `python-multipart`, etc.)**  
+  Activate the correct virtualenv and run `pip install -r requirements.txt`.
+
+- **401 on `/hackrx/run`**  
+  Verify `Authorization` header format and `HACKRX_TOKEN`.
+
+- **Pinecone connection/index errors**  
+  Check `PINECONE_API_KEY`, `PINECONE_INDEX_NAME`, network access, and project quotas.
+
+- **No relevant answers / low confidence**  
+  Tune `SIMILARITY_THRESHOLD`, `TOP_K_RESULTS`, `CHUNK_SIZE`, and `CHUNK_OVERLAP`.
+
+- **OCR not working**  
+  Confirm Tesseract and Poppler are installed and visible in PATH.
+
+- **Slow PDF processing**  
+  Scanned PDFs trigger OCR; this is expected to be slower.
+
+---
+
+## 13) Security and Operational Guidance
+
+- Never commit `.env` or API keys.
+- Use a strong non-default `HACKRX_TOKEN`.
+- Restrict CORS origins in production.
+- Add API gateway/rate limits in internet-facing deployments.
+- Keep Pinecone index names environment-specific (`dev`, `staging`, `prod`).
+
+---
+
+## 14) Backward Compatibility
+
+Root-level compatibility modules are present to prevent breaking older imports/scripts while using the new `src/policymind` structure.
+
+---
+
+## 15) License
+
+Internal/hackathon use unless a separate license file is added.
+# PolicyMind
+
+PolicyMind is a production-structured FastAPI RAG service for insurance and policy document Q&A.  
+It processes uploaded documents, indexes content in Pinecone with integrated embeddings, and answers questions with evidence-backed responses.
+
+## Architecture
+
+- `src/policymind/app.py`: app factory and startup wiring
+- `src/policymind/api/routes.py`: HTTP route handlers
+- `src/policymind/core/`: config and logging
+- `src/policymind/services/`: document processing, vector storage, query engine, LLM providers
+- `src/policymind/models/schemas.py`: API/data schemas
+- `src/policymind/dependencies/container.py`: dependency container
+
+## Quick Start
+
+1. Create and activate a virtual environment.
+2. Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+3. Configure environment variables in `.env` (see `.env.example`).
+4. Run the app:
+
+```bash
+python main.py
+```
+
+## API Endpoints
+
+- `GET /` health/info
+- `POST /upload` upload document for indexing
+- `POST /query` ask questions against indexed documents
+- `POST /hackrx/run` run isolated hackathon document flow
+
+Interactive docs: `http://127.0.0.1:8000/docs`
+
+## Notes
+
+- Cloud-first vector flow uses Pinecone integrated embeddings (`PINECONE_EMBEDDING_MODEL`).
+- OCR requires Tesseract and Poppler to be installed on the machine.

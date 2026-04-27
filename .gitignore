@@ -19,6 +19,7 @@ app.log
 
 # Ignore the directory for user-uploaded files.
 uploads/
+vector_store/
 
 # --- IDE and Editor Configuration ---
 # Ignore Visual Studio Code specific settings.
@@ -43,3 +44,8 @@ htmlcov/
 
 # Ignore Windows thumbnail cache files.
 Thumbs.db
+
+# Local env managers and tooling
+.venv/
+.mypy_cache/
+.ruff_cache/
