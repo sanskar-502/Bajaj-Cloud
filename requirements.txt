@@ -49,3 +49,11 @@ numpy==1.26.4
 nltk==3.8.1
 # For loading environment variables from a .env file
 python-dotenv==1.0.1
+# Retry logic for resilient network calls
+tenacity==8.2.3
+
+# --- Developer Tools (Testing & Formatting) ---
+pytest==8.2.0
+pytest-asyncio==0.23.6
+ruff==0.4.2
+mypy==1.10.0

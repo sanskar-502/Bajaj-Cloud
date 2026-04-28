@@ -1,16 +1,22 @@
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from policymind.core.config import Settings
-from typing import Any
+
+if TYPE_CHECKING:
+    from policymind.services.document_processor import DocumentProcessor
+    from policymind.services.vector_store import VectorStore
+    from policymind.services.llm_providers import LLMProvider
+    from policymind.services.query_engine import QueryEngine
 
 
 @dataclass
 class AppContainer:
     settings: Settings
-    document_processor: Any
-    vector_store: Any
-    llm_provider: Any
-    query_engine: Any
+    document_processor: "DocumentProcessor"
+    vector_store: "VectorStore"
+    llm_provider: "LLMProvider"
+    query_engine: "QueryEngine"
 
 
 def build_container() -> AppContainer:

@@ -48,7 +48,8 @@ async def upload_document(
     container: AppContainer = Depends(get_container),
 ) -> UploadResponse:
     settings = container.settings
-    ext = os.path.splitext(file.filename)[1].lower()
+    filename = file.filename or ""
+    ext = os.path.splitext(filename)[1].lower()
     if ext not in settings.SUPPORTED_FORMATS:
         raise HTTPException(status_code=400, detail=f"Unsupported format: '{ext}'.")
     if file.size and file.size > settings.MAX_FILE_SIZE * 1024 * 1024:
@@ -73,7 +74,7 @@ async def query_documents(
     is_valid, message = container.query_engine.validate_query(request.question)
     if not is_valid:
         raise HTTPException(status_code=400, detail=message)
-    return container.query_engine.process_query(request)
+    return await container.query_engine.process_query(request)
 
 
 @router.post("/hackrx/run", response_model=SubmissionResponse, summary="Run a submission for hackathon")
@@ -114,7 +115,7 @@ async def run_submission(
             query_request = QueryRequest(
                 question=question, document_ids=[temp_doc_id], include_logic=False
             )
-            query_result = container.query_engine.process_query(query_request)
+            query_result = await container.query_engine.process_query(query_request)
             answers.append(query_result.answer)
         return SubmissionResponse(answers=answers)
     except httpx.RequestError as exc:
