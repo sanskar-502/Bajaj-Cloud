@@ -30,10 +30,13 @@ Typical use cases:
 ## 2) Core Features
 
 - **Cloud-native vector workflow**  
-  Uses Pinecone integrated embedding model (`PINECONE_EMBEDDING_MODEL`) so embedding generation is handled by Pinecone.
+  Uses Pinecone integrated embedding model (`PINECONE_EMBEDDING_MODEL`) so embedding generation is handled natively by Pinecone.
 
-- **Provider-flexible answer generation**  
-  Supports Gemini and OpenAI for final answer synthesis.
+- **Asynchronous LLM Orchestration**  
+  Built with fully asynchronous I/O (`AsyncOpenAI` & `google-generativeai`) to eliminate thread-blocking during high-latency RAG tasks.
+
+- **Enterprise Resiliency**  
+  Implements strict dependency injection, static type checking (`mypy`), and exponential-backoff retry logic (`tenacity`) to gracefully handle LLM rate limits.
 
 - **Document lifecycle API**  
   Upload, process, query, and temporary isolated processing for external evaluation flows.
@@ -69,7 +72,14 @@ PolicyMind/
 │           ├── query_engine.py        # RAG query orchestration
 │           └── vector_store.py        # Pinecone data operations
 ├── tests/
+│   ├── unit/
+│   │   └── test_query_engine.py       # Async mocking & Pydantic validation tests
 │   └── test_smoke.py                  # Basic import/smoke scaffold
+├── .github/
+│   └── workflows/
+│       └── ci.yml                     # CI/CD Pipeline (Ruff, MyPy, Pytest)
+├── Dockerfile                         # Production container definition
+├── docker-compose.yml                 # Local container orchestration
 ├── requirements.txt
 ├── .env.example
 ├── .gitignore
@@ -119,7 +129,8 @@ PolicyMind/
 - **LLM providers**: Google Gemini (`google-generativeai`), OpenAI (`openai`)
 - **Document extraction**: PyMuPDF, PyPDF2, python-docx, python-pptx
 - **OCR**: pytesseract + pdf2image
-- **Validation**: Pydantic
+- **Validation/Resiliency**: Pydantic, mypy, tenacity
+- **Orchestration**: Docker, GitHub Actions, docker-compose
 - **Utilities**: nltk, python-dotenv, httpx, numpy
 
 ---
@@ -155,50 +166,30 @@ sudo apt-get install -y tesseract-ocr poppler-utils
 
 ## 7) Local Setup (Step-by-Step)
 
-### Step 1: Enter project
+### Step 1: Clone & Configure
 
 ```bash
+git clone https://github.com/sanskar-502/Bajaj-Cloud.git
 cd PolicyMind
+cp .env.example .env # Add your Pinecone/OpenAI keys
 ```
 
-### Step 2: Create virtual environment
+### Option A: Run via Docker (Recommended for Production)
+
+```bash
+docker-compose up -d --build
+```
+*API will run at `http://127.0.0.1:8000`*
+
+### Option B: Local Development (Manual Setup)
 
 ```bash
 python -m venv venv
-```
+.\venv\Scripts\Activate.ps1 # Windows
+# source venv/bin/activate   # macOS/Linux
 
-### Step 3: Activate environment
-
-Windows PowerShell:
-
-```bash
-.\venv\Scripts\Activate.ps1
-```
-
-macOS/Linux:
-
-```bash
-source venv/bin/activate
-```
-
-### Step 4: Install dependencies
-
-```bash
 pip install -r requirements.txt
-```
-
-### Step 5: Configure environment
-
-```bash
-cp .env.example .env
-```
-
-Then edit `.env` with your real keys and settings.
-
-### Step 6: Start server
-
-```bash
-python main.py
+uvicorn policymind.app:app --reload
 ```
 
 Server:
