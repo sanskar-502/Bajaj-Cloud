@@ -14,7 +14,7 @@ class Settings:
         self.OPENAI_API_KEY: str | None = os.getenv("OPENAI_API_KEY")
         self.OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
         self.GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY")
-        self.GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+        self.GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
 
         self.VECTOR_DB_TYPE: str = os.getenv("VECTOR_DB_TYPE", "pinecone").lower()
         self.PINECONE_API_KEY: str | None = os.getenv("PINECONE_API_KEY")

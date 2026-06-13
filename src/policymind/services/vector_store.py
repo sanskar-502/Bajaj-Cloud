@@ -45,21 +45,38 @@ class VectorStore:
     def search(
         self, query: str, top_k: int, document_ids: Optional[List[str]] = None
     ) -> List[SearchResult]:
-        filter_dict = {"document_id": {"$in": document_ids}} if document_ids else None
+        if document_ids:
+            if len(document_ids) == 1:
+                filter_dict = {"document_id": document_ids[0]}
+            else:
+                filter_dict = {"document_id": {"$in": document_ids}}
+        else:
+            filter_dict = None
         results = self.index.search(
-            query={"inputs": {"text": query}, "top_k": top_k, "filter": filter_dict},
-            fields=["chunk_text", "document_id", "chunk_id", "id", "title", "page"],
             namespace="__default__",
+            top_k=top_k,
+            inputs={"text": query},
+            filter=filter_dict,
+            fields=["chunk_text", "document_id", "chunk_id", "id", "title", "page"],
         )
 
         search_results: List[SearchResult] = []
-        for match in results.get("result", {}).get("hits", []):
-            metadata = match.get("fields", {})
+        hits = getattr(getattr(results, "result", None), "hits", []) if hasattr(results, "result") else results.get("result", {}).get("hits", [])
+
+        for match in hits:
+            # Handle object vs dictionary for metadata
+            metadata = getattr(match, "fields", {}) if hasattr(match, "fields") else match.get("fields", {})
+            
+            # Handle object vs dictionary for score
+            score = getattr(match, "score", None)
+            if score is None:
+                score = match.get("score", match.get("_score", 0.0))
+
             search_results.append(
                 SearchResult(
                     content=metadata.get("chunk_text", ""),
                     metadata=metadata,
-                    score=match.get("_score", 0.0),
+                    score=score,
                 )
             )
         return search_results
