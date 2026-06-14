@@ -30,6 +30,7 @@ class QueryEngine:
             top_k=request.max_results,
             document_ids=request.document_ids,
         )
+        logger.info(f"raw search results: {search_results}")
         filtered_results = [
             result for result in search_results if result.score >= self.settings.SIMILARITY_THRESHOLD
         ]
