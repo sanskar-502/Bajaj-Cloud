@@ -8,7 +8,7 @@ openai==1.35.10
 # --- Vector Database & Embeddings ---
 # The official client for the Pinecone cloud vector database (v4+)
 # This client is used to interact with Pinecone's API, including the integrated embedding models.
-pinecone==4.1.2
+pinecone>=5.0.0
 
 
 # --- Document Processing & OCR ---
