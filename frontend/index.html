@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="PolicyMind — AI-powered document intelligence platform using RAG for policy and compliance Q&A with evidence-backed answers.">
+  <title>PolicyMind — AI Document Intelligence</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠</text></svg>">
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+
+  <!-- Animated Background -->
+  <div class="bg-mesh"></div>
+  <div class="particles"></div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- App Container -->
+  <div class="app-container">
+
+    <!-- ===================== HERO ===================== -->
+    <header class="hero anim-fade-in-up">
+      <div class="hero__logo">
+        <div class="hero__icon">🧠</div>
+      </div>
+      <h1 class="hero__title">PolicyMind</h1>
+      <p class="hero__subtitle">
+        AI-powered document intelligence platform. Upload policy documents, 
+        ask natural language questions, and get evidence-backed answers with 
+        full reasoning transparency.
+      </p>
+      <div class="hero__badges">
+        <span class="badge"><span class="badge__dot"></span>RAG Pipeline</span>
+        <span class="badge"><span class="badge__dot" style="background:var(--accent-violet)"></span>Pinecone Vector DB</span>
+        <span class="badge"><span class="badge__dot" style="background:var(--accent-pink)"></span>Gemini / OpenAI</span>
+        <span class="badge"><span class="badge__dot" style="background:var(--accent-green)"></span>FastAPI</span>
+        <span class="badge"><span class="badge__dot" style="background:var(--accent-amber)"></span>OCR Support</span>
+      </div>
+    </header>
+
+    <!-- ===================== MAIN GRID ===================== -->
+    <div class="main-grid">
+
+      <!-- ---- UPLOAD PANEL ---- -->
+      <section class="panel glass-panel anim-fade-in-up anim-delay-1" id="uploadPanel">
+        <div class="section-header">
+          <div class="section-header__icon">📤</div>
+          <div class="section-header__text">
+            <h2>Upload Documents</h2>
+            <p>Drag & drop or click to browse</p>
+          </div>
+        </div>
+
+        <div class="dropzone" id="dropzone">
+          <span class="dropzone__icon">📁</span>
+          <div class="dropzone__text">Drop your document here</div>
+          <div class="dropzone__subtext">or click to browse files</div>
+          <div class="dropzone__formats">
+            <span class="format-tag">.pdf</span>
+            <span class="format-tag">.docx</span>
+            <span class="format-tag">.txt</span>
+            <span class="format-tag">.pptx</span>
+          </div>
+        </div>
+        <input type="file" class="file-input" id="fileInput" accept=".pdf,.docx,.txt,.pptx">
+
+        <div class="upload-progress" id="uploadProgress">
+          <div class="progress-bar">
+            <div class="progress-bar__fill" id="progressFill"></div>
+          </div>
+          <div class="upload-status" id="uploadStatus"></div>
+        </div>
+
+        <div class="document-list" id="documentList">
+          <div class="empty-state">
+            <div class="empty-state__icon">📄</div>
+            <div class="empty-state__text">No documents uploaded yet</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---- QUERY PANEL ---- -->
+      <section class="panel glass-panel anim-fade-in-up anim-delay-2" id="queryPanel">
+        <div class="section-header">
+          <div class="section-header__icon">💬</div>
+          <div class="section-header__text">
+            <h2>Ask PolicyMind</h2>
+            <p>Query your indexed documents</p>
+          </div>
+        </div>
+
+        <form class="query-input-group" id="queryForm">
+          <textarea 
+            class="query-textarea" 
+            id="queryInput" 
+            placeholder="What is the waiting period for pre-existing diseases?&#10;&#10;Ask any question about your uploaded documents..."
+            rows="5"
+          ></textarea>
+
+          <div class="query-options">
+            <label class="toggle-group">
+              <input type="checkbox" class="toggle" id="includeLogic" checked>
+              <span>Logic Tree</span>
+            </label>
+          </div>
+
+          <button type="submit" class="btn btn--primary btn--full" id="queryBtn">
+            <span class="btn__spinner"></span>
+            <span class="btn__text">🔍 Ask PolicyMind</span>
+          </button>
+        </form>
+
+        <div style="margin-top: var(--space-lg);">
+          <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: var(--space-sm);">Try these example queries:</p>
+          <div style="display: flex; flex-direction: column; gap: var(--space-xs);">
+            <button class="btn btn--ghost" style="font-size: 0.8rem; justify-content: flex-start; padding: 8px 12px;" onclick="setQuery('What is the waiting period for pre-existing diseases?')">
+              → What is the waiting period for pre-existing diseases?
+            </button>
+            <button class="btn btn--ghost" style="font-size: 0.8rem; justify-content: flex-start; padding: 8px 12px;" onclick="setQuery('Is maternity covered and after what waiting period?')">
+              → Is maternity covered and after what waiting period?
+            </button>
+            <button class="btn btn--ghost" style="font-size: 0.8rem; justify-content: flex-start; padding: 8px 12px;" onclick="setQuery('What are the exclusions in this policy?')">
+              → What are the exclusions in this policy?
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ===================== RESULTS ===================== -->
+    <section class="results-section" id="resultsSection">
+
+      <!-- Answer Card -->
+      <div class="answer-card glass-panel glass-panel--accent">
+        <div class="answer-header">
+          <div class="answer-header__label">
+            <span>✨</span> AI-Generated Answer
+          </div>
+          <div class="confidence-gauge">
+            <div class="confidence-ring">
+              <svg viewBox="0 0 40 40">
+                <circle class="confidence-ring__bg" cx="20" cy="20" r="18"></circle>
+                <circle class="confidence-ring__fill" cx="20" cy="20" r="18"></circle>
+              </svg>
+              <span class="confidence-ring__text" id="confidenceValue">—</span>
+            </div>
+            <span class="confidence-label">Confidence</span>
+          </div>
+        </div>
+
+        <div class="answer-text" id="answerContent"></div>
+
+        <div class="answer-meta" id="answerMeta"></div>
+      </div>
+
+      <!-- Clauses Section Header -->
+      <div class="section-header anim-fade-in-up">
+        <div class="section-header__icon" style="background: var(--gradient-warm);">§</div>
+        <div class="section-header__text">
+          <h2>Evidence & Source Clauses</h2>
+          <p>Click a clause to expand and see full text</p>
+        </div>
+      </div>
+
+      <div class="clauses-grid" id="clausesGrid"></div>
+
+      <!-- Logic Tree -->
+      <div class="logic-tree-container" id="logicTreeContainer">
+        <div class="section-header anim-fade-in-up">
+          <div class="section-header__icon" style="background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));">🌿</div>
+          <div class="section-header__text">
+            <h2>Reasoning Logic Tree</h2>
+            <p>How the AI structured its answer from evidence</p>
+          </div>
+        </div>
+        <div class="logic-tree glass-panel" id="logicTree"></div>
+      </div>
+
+    </section>
+
+    <!-- ===================== ARCHITECTURE ===================== -->
+    <section class="architecture-section anim-fade-in-up">
+      <div class="section-header" style="justify-content: center; text-align: center; flex-direction: column; gap: var(--space-sm);">
+        <div class="section-header__icon" style="background: linear-gradient(135deg, var(--accent-violet), var(--accent-pink));">⚙️</div>
+        <div class="section-header__text" style="text-align: center;">
+          <h2>RAG Pipeline Architecture</h2>
+          <p>How PolicyMind processes your documents and generates answers</p>
+        </div>
+      </div>
+
+      <div class="pipeline glass-panel" style="margin-top: var(--space-lg);">
+        <div class="pipeline-step" data-step="1">
+          <div class="pipeline-step__icon">📤</div>
+          <div class="pipeline-step__label">Upload</div>
+          <div class="pipeline-step__desc">PDF, DOCX, TXT, PPTX input</div>
+        </div>
+        <div class="pipeline-step" data-step="2">
+          <div class="pipeline-step__icon">📝</div>
+          <div class="pipeline-step__label">Extract</div>
+          <div class="pipeline-step__desc">OCR & text parsing</div>
+        </div>
+        <div class="pipeline-step" data-step="3">
+          <div class="pipeline-step__icon">✂️</div>
+          <div class="pipeline-step__label">Chunk</div>
+          <div class="pipeline-step__desc">Semantic splitting</div>
+        </div>
+        <div class="pipeline-step" data-step="4">
+          <div class="pipeline-step__icon">🧬</div>
+          <div class="pipeline-step__label">Embed</div>
+          <div class="pipeline-step__desc">Pinecone vectors</div>
+        </div>
+        <div class="pipeline-step" data-step="5">
+          <div class="pipeline-step__icon">🔍</div>
+          <div class="pipeline-step__label">Retrieve</div>
+          <div class="pipeline-step__desc">Similarity search</div>
+        </div>
+        <div class="pipeline-step" data-step="6">
+          <div class="pipeline-step__icon">🤖</div>
+          <div class="pipeline-step__label">Generate</div>
+          <div class="pipeline-step__desc">LLM reasoning</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== WHY DIFFERENT ===================== -->
+    <section class="differentiators-section anim-fade-in-up">
+      <div class="section-header">
+        <div class="section-header__icon" style="background: linear-gradient(135deg, var(--accent-cyan), var(--accent-green));">💎</div>
+        <div class="section-header__text">
+          <h2>Why PolicyMind is Different</h2>
+          <p>What sets this RAG apart from typical tutorial-level implementations</p>
+        </div>
+      </div>
+
+      <div class="diff-grid">
+
+        <!-- Card 1: Cloud-Native Embeddings -->
+        <div class="diff-card glass-panel anim-fade-in-up anim-delay-1">
+          <span class="diff-card__badge">Architecture</span>
+          <span class="diff-card__icon">☁️</span>
+          <div class="diff-card__title">Cloud-Native Integrated Embeddings</div>
+          <div class="diff-card__desc">
+            Most RAGs generate embeddings locally with sentence-transformers, creating a CPU bottleneck. PolicyMind delegates embedding to <strong>Pinecone's integrated embedding models</strong> — the vector DB itself generates embeddings at index time, eliminating a separate embedding service entirely.
+          </div>
+          <div class="diff-card__detail">
+            Model: <code>llama-text-embed-v2</code> · Zero local GPU/CPU cost · Automatic scaling
+          </div>
+        </div>
+
+        <!-- Card 2: Structured Reasoning -->
+        <div class="diff-card glass-panel anim-fade-in-up anim-delay-2">
+          <span class="diff-card__badge">Explainability</span>
+          <span class="diff-card__icon">🌿</span>
+          <div class="diff-card__title">Structured Logic Tree Reasoning</div>
+          <div class="diff-card__desc">
+            Typical RAGs return just an answer. PolicyMind generates a full <strong>AND/OR/CONDITIONAL logic tree</strong> via a second LLM call, showing exactly which clauses contribute to the answer and whether each condition is met — full explainability.
+          </div>
+          <div class="diff-card__detail">
+            JSON-structured output via <code>response_mime_type="application/json"</code> · Pydantic-validated
+          </div>
+        </div>
+
+        <!-- Card 3: Production Resilience -->
+        <div class="diff-card glass-panel anim-fade-in-up anim-delay-3">
+          <span class="diff-card__badge">Reliability</span>
+          <span class="diff-card__icon">🛡️</span>
+          <div class="diff-card__title">Production-Grade Fault Tolerance</div>
+          <div class="diff-card__desc">
+            LLM APIs fail. PolicyMind wraps every LLM call in <strong>exponential-backoff retry logic</strong> (tenacity), uses fully <strong>async I/O</strong> to prevent thread blocking, and implements strict dependency injection for testability.
+          </div>
+          <div class="diff-card__detail">
+            <code>@retry(stop=3, wait=exponential)</code> · <code>AsyncOpenAI</code> · <code>generate_content_async</code>
+          </div>
+        </div>
+
+        <!-- Card 4: Multi-Format Intelligence -->
+        <div class="diff-card glass-panel anim-fade-in-up anim-delay-4">
+          <span class="diff-card__badge">Versatility</span>
+          <span class="diff-card__icon">📑</span>
+          <div class="diff-card__title">Multi-Format with OCR Fallback</div>
+          <div class="diff-card__desc">
+            Not just PDFs. PolicyMind processes <strong>PDF, DOCX, PPTX, and TXT</strong> files. For scanned/image-based PDFs, it automatically falls back to <strong>Tesseract OCR via pdf2image</strong> — extracting text from documents that break most RAG pipelines.
+          </div>
+          <div class="diff-card__detail">
+            PyMuPDF → OCR fallback · <code>pytesseract</code> + <code>pdf2image</code> · Sentence-boundary chunking
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Comparison Table -->
+      <div class="vs-comparison glass-panel anim-fade-in-up">
+        <div class="vs-comparison__title">PolicyMind vs Typical RAG Tutorial</div>
+        <table class="vs-table">
+          <thead>
+            <tr>
+              <th>Aspect</th>
+              <th>Typical RAG</th>
+              <th>PolicyMind</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Embeddings</td>
+              <td>Local sentence-transformers (slow, CPU-bound)</td>
+              <td>✓ Cloud-native via Pinecone integrated models</td>
+            </tr>
+            <tr>
+              <td>Answer Format</td>
+              <td>Plain text answer only</td>
+              <td>✓ Answer + confidence score + logic tree + source clauses</td>
+            </tr>
+            <tr>
+              <td>Error Handling</td>
+              <td>Crash on API failure</td>
+              <td>✓ Exponential backoff with 3 retry attempts</td>
+            </tr>
+            <tr>
+              <td>I/O Model</td>
+              <td>Synchronous / blocking</td>
+              <td>✓ Fully async (AsyncOpenAI, generate_content_async)</td>
+            </tr>
+            <tr>
+              <td>Document Types</td>
+              <td>PDF only</td>
+              <td>✓ PDF + DOCX + PPTX + TXT with OCR fallback</td>
+            </tr>
+            <tr>
+              <td>LLM Provider</td>
+              <td>Hardcoded to one provider</td>
+              <td>✓ Abstract provider pattern (Gemini / OpenAI swappable)</td>
+            </tr>
+            <tr>
+              <td>Architecture</td>
+              <td>Single-file script</td>
+              <td>✓ DI container, service layers, Pydantic schemas, CI/CD</td>
+            </tr>
+            <tr>
+              <td>Deployment</td>
+              <td>Local only</td>
+              <td>✓ Docker + docker-compose + GitHub Actions CI</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===================== ENGINEERING APPROACHES ===================== -->
+    <section class="approaches-section anim-fade-in-up">
+      <div class="section-header">
+        <div class="section-header__icon" style="background: linear-gradient(135deg, var(--accent-amber), var(--accent-pink));">🔧</div>
+        <div class="section-header__text">
+          <h2>Engineering Approaches & Design Decisions</h2>
+          <p>Key technical choices that make the system efficient and maintainable</p>
+        </div>
+      </div>
+
+      <div class="approach-bento">
+
+        <div class="approach-card glass-panel approach-card--wide">
+          <div class="approach-card__number">01</div>
+          <div class="approach-card__title">Sentence-Boundary Aware Chunking with Overlap</div>
+          <div class="approach-card__desc">
+            Instead of naive fixed-length splitting that breaks mid-sentence, the document processor uses <strong>NLTK sentence tokenization</strong> to split at natural sentence boundaries. Each chunk has configurable overlap (default 200 chars) to preserve cross-boundary context — critical for policy documents where clause meaning spans multiple sentences.
+          </div>
+          <div class="approach-card__code"><code>sent_tokenize(text)</code> → overlap window → chunk_size=1000, overlap=200</div>
+        </div>
+
+        <div class="approach-card glass-panel">
+          <div class="approach-card__number">02</div>
+          <div class="approach-card__title">Fully Async LLM I/O</div>
+          <div class="approach-card__desc">
+            All LLM calls use async clients (<code>AsyncOpenAI</code>, <code>generate_content_async</code>) so the FastAPI event loop is never blocked during high-latency AI calls — enabling concurrent request handling.
+          </div>
+        </div>
+
+        <div class="approach-card glass-panel">
+          <div class="approach-card__number">03</div>
+          <div class="approach-card__title">Dependency Injection Container</div>
+          <div class="approach-card__desc">
+            Services are wired via a <code>@dataclass AppContainer</code> built once at startup. This makes every component independently testable and avoids global state — a pattern used in production Python systems.
+          </div>
+        </div>
+
+        <div class="approach-card glass-panel">
+          <div class="approach-card__number">04</div>
+          <div class="approach-card__title">Abstract Provider Pattern</div>
+          <div class="approach-card__desc">
+            The <code>LLMProvider</code> ABC defines a contract for <code>generate_response</code> and <code>generate_structured_response</code>. Swapping from Gemini to OpenAI requires changing one env var — zero code changes.
+          </div>
+        </div>
+
+        <div class="approach-card glass-panel">
+          <div class="approach-card__number">05</div>
+          <div class="approach-card__title">Structured JSON Generation</div>
+          <div class="approach-card__desc">
+            Logic trees use native JSON modes: Gemini's <code>response_mime_type="application/json"</code> and OpenAI's <code>response_format=json_object</code>. Outputs are validated with <strong>Pydantic recursive models</strong>.
+          </div>
+        </div>
+
+        <div class="approach-card glass-panel">
+          <div class="approach-card__number">06</div>
+          <div class="approach-card__title">Exponential Backoff Retry</div>
+          <div class="approach-card__desc">
+            Every LLM call is wrapped with <code>tenacity</code> — 3 attempts with exponential wait (2s → 4s → 10s max). Gracefully handles rate limits and transient API failures without crashing.
+          </div>
+        </div>
+
+        <div class="approach-card glass-panel">
+          <div class="approach-card__number">07</div>
+          <div class="approach-card__title">Background Document Processing</div>
+          <div class="approach-card__desc">
+            File uploads return immediately with a document ID. The heavy extraction → chunking → embedding pipeline runs in a FastAPI <code>BackgroundTask</code>, keeping API response times under 200ms.
+          </div>
+        </div>
+
+        <div class="approach-card glass-panel">
+          <div class="approach-card__number">08</div>
+          <div class="approach-card__title">Self-Assessed Confidence Scoring</div>
+          <div class="approach-card__desc">
+            The LLM is prompted to evaluate its own answer confidence (0.0–1.0) based on evidence quality. This score is parsed from the response via regex and surfaced in the API — enabling downstream decision-making.
+          </div>
+        </div>
+
+        <div class="approach-card glass-panel">
+          <div class="approach-card__number">09</div>
+          <div class="approach-card__title">CI/CD with Static Analysis</div>
+          <div class="approach-card__desc">
+            GitHub Actions pipeline runs <strong>Ruff</strong> (linting), <strong>MyPy</strong> (static typing), and <strong>Pytest</strong> on every push. Type annotations are enforced across the entire codebase for production reliability.
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===================== FOOTER ===================== -->
+    <footer class="tech-footer">
+      <div class="tech-footer__title">Built With</div>
+      <div class="tech-stack">
+        <div class="tech-item">
+          <span class="tech-item__icon">⚡</span> FastAPI
+        </div>
+        <div class="tech-item">
+          <span class="tech-item__icon">🌲</span> Pinecone
+        </div>
+        <div class="tech-item">
+          <span class="tech-item__icon">✨</span> Gemini AI
+        </div>
+        <div class="tech-item">
+          <span class="tech-item__icon">🤖</span> OpenAI
+        </div>
+        <div class="tech-item">
+          <span class="tech-item__icon">🐍</span> Python
+        </div>
+        <div class="tech-item">
+          <span class="tech-item__icon">🐳</span> Docker
+        </div>
+        <div class="tech-item">
+          <span class="tech-item__icon">👁️</span> Tesseract OCR
+        </div>
+        <div class="tech-item">
+          <span class="tech-item__icon">📊</span> Pydantic
+        </div>
+      </div>
+      <p style="margin-top: var(--space-xl); font-size: 0.75rem; color: var(--text-muted);">
+        PolicyMind — RAG-powered Document Intelligence · Built by 
+        <a href="https://github.com/sanskar-502" target="_blank" rel="noopener" style="color: var(--accent-cyan); text-decoration: none;">Sanskar</a>
+      </p>
+    </footer>
+
+  </div>
+
+  <!-- Script to set example queries -->
+  <script>
+    function setQuery(text) {
+      const input = document.getElementById('queryInput');
+      input.value = text;
+      input.focus();
+    }
+  </script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
