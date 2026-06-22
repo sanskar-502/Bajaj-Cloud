@@ -71,6 +71,11 @@ PolicyMind/
 │           ├── llm_providers.py       # Gemini/OpenAI adapters
 │           ├── query_engine.py        # RAG query orchestration
 │           └── vector_store.py        # Pinecone data operations
+├── frontend/
+│   ├── index.html                     # Single-page frontend application
+│   └── static/
+│       ├── css/styles.css             # Glassmorphism design system
+│       └── js/app.js                  # Upload, query, and result rendering
 ├── tests/
 │   ├── unit/
 │   │   └── test_query_engine.py       # Async mocking & Pydantic validation tests
@@ -174,14 +179,15 @@ cd PolicyMind
 cp .env.example .env # Add your Pinecone/OpenAI keys
 ```
 
-### Option A: Run via Docker (Recommended for Production)
+### Step 2: Start the Application
+
+#### Option A: Run via Docker (Recommended for Production)
 
 ```bash
 docker-compose up -d --build
 ```
-*API will run at `http://127.0.0.1:8000`*
 
-### Option B: Local Development (Manual Setup)
+#### Option B: Local Development (Manual Setup)
 
 ```bash
 python -m venv venv
@@ -189,13 +195,18 @@ python -m venv venv
 # source venv/bin/activate   # macOS/Linux
 
 pip install -r requirements.txt
-uvicorn policymind.app:app --reload
+uvicorn policymind.app:app --reload --app-dir src
 ```
 
-Server:
+### Step 3: Open in Browser
 
-- API: `http://127.0.0.1:8000`
-- Docs (Swagger): `http://127.0.0.1:8000/docs`
+Once the server is running:
+
+| URL | Description |
+|-----|-------------|
+| `http://127.0.0.1:8000/app` | **Frontend UI** — Upload documents, ask questions, view answers |
+| `http://127.0.0.1:8000/docs` | Swagger API docs (interactive) |
+| `http://127.0.0.1:8000/` | Health check endpoint |
 
 ---
 
@@ -317,6 +328,7 @@ Response:
 - App uses startup event to build dependency container.
 - Services are constructed once and reused.
 - Upload processing is offloaded to FastAPI background tasks.
+- Frontend is served as static files at `/app` (HTML/CSS/JS, no build step required).
 - Logs are written to `app.log` and stdout.
 - Temporary files are cleaned after processing.
 - Hackathon flow removes temporary vectors after answer generation.
@@ -382,46 +394,14 @@ Root-level compatibility modules are present to prevent breaking older imports/s
 ## 15) License
 
 Internal/hackathon use unless a separate license file is added.
-# PolicyMind
-
-PolicyMind is a production-structured FastAPI RAG service for insurance and policy document Q&A.  
-It processes uploaded documents, indexes content in Pinecone with integrated embeddings, and answers questions with evidence-backed responses.
-
-## Architecture
-
-- `src/policymind/app.py`: app factory and startup wiring
-- `src/policymind/api/routes.py`: HTTP route handlers
-- `src/policymind/core/`: config and logging
-- `src/policymind/services/`: document processing, vector storage, query engine, LLM providers
-- `src/policymind/models/schemas.py`: API/data schemas
-- `src/policymind/dependencies/container.py`: dependency container
-
-## Quick Start
-
-1. Create and activate a virtual environment.
-2. Install dependencies:
+## Quick Start (TL;DR)
 
 ```bash
+git clone https://github.com/sanskar-502/Bajaj-Cloud.git
+cd PolicyMind
+cp .env.example .env                # Add your API keys
 pip install -r requirements.txt
+uvicorn policymind.app:app --reload --app-dir src
 ```
 
-3. Configure environment variables in `.env` (see `.env.example`).
-4. Run the app:
-
-```bash
-python main.py
-```
-
-## API Endpoints
-
-- `GET /` health/info
-- `POST /upload` upload document for indexing
-- `POST /query` ask questions against indexed documents
-- `POST /hackrx/run` run isolated hackathon document flow
-
-Interactive docs: `http://127.0.0.1:8000/docs`
-
-## Notes
-
-- Cloud-first vector flow uses Pinecone integrated embeddings (`PINECONE_EMBEDDING_MODEL`).
-- OCR requires Tesseract and Poppler to be installed on the machine.
+Open **http://127.0.0.1:8000/app** for the frontend UI, or **http://127.0.0.1:8000/docs** for the Swagger API docs.
